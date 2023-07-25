@@ -1,3 +1,8 @@
+# Repo specific
+localGPT/
+privateGPT/
+venv-paik/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

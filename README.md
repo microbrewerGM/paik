@@ -1,14 +1,14 @@
 # PAIK - Private AI Knowledgebase
 
-ML/AI LLM powered knowledgebase, private algorithms and computation for private/public data. 
+ML/AI LLM powered knowledgebase, private algorithms and computation for private/public data.
 
 ## Roadmap
 
 ### Active
 
 - Integrate PrivateGPT and localGPT
-  - Inspired by several features of **PrivateGPT** https://github.com/imartinez/privateGPT
-  - Inspired by several features of **localGPT** https://github.com/PromtEngineer/localGPT
+  - Inspired by several features of [**PrivateGPT**](<https://github.com/imartinez/privateGPT>)
+  - Inspired by several features of [**localGPT**](<https://github.com/PromtEngineer/localGPT>)
 
 ### Next Feature
 
@@ -17,7 +17,7 @@ ML/AI LLM powered knowledgebase, private algorithms and computation for private/
 ### Future
 
 - Organize source docs folder
-- Maybe integrate **langFlow** https://github.com/logspace-ai/langflow
+- Maybe integrate [**langFlow**](<https://github.com/logspace-ai/langflow>)
 - Create options to run OpenAI for various ML/AI/chat functions
 - Add capability to pull a file via URL
 - Add YouTube video summarizer capability; not dependent on transcripts - voice to text to summaries
@@ -41,4 +41,4 @@ ML/AI LLM powered knowledgebase, private algorithms and computation for private/
   : to strike hard and repeatedly : pummel
 ```
 
-and... sometimes i feel like pummeling my head against the keyboard... the fun part is when the code works ```;)``` 
+and... sometimes i feel like pummeling my head against the keyboard... the fun part is when the code works ```;)```

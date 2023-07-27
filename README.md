@@ -50,46 +50,38 @@ ML/AI LLM powered knowledgebase, private algorithms and computation for private/
     : to strike hard and repeatedly : pummel
   ```
 
-and... sometimes i feel like pummeling my head against the keyboard... the fun part is when the code works ```;)```
+and... sometimes i feel like pummeling my head against the keyboard... the fun part is when the code pummels the work ```;)```
 
 # Environment Setup
 
-Install python venv
+Install python venv by running the command `pip install virtualenv`.
 
-  ```shell
-  pip install virtualenv
-  ```
+Create new virtual environment by running the command `python3 -m venv paik`.
 
-Create new virtual environment
+Activate virtual environment by running the command `source paik/bin/activate`. 
 
-  ```shell
-  python3 -m venv paik
-  ```
-
-Activate virtual environment
-
-  ```shell
-  source paik/bin/activate
-  ```
-
-In order to set your environment up to run the code here, first install all requirements:
-
-  ```shell
-  pip install -r requirements.txt
-  ```
+Setting up the execution environment to run the code, start with installing all requirements. Run the command `pip install -r requirements.txt`.
 
 # Running the code
 
 *Note:* The localGPT code defaults to using the GPU. This code base defaults to CPU. The `--device-type` flag is not needed when running this code. 
 
-Run the following command to ingest all the data.
+1. Run the following command `python3 ingest.py` to ingest all the data.
 
-  ```shell
-  python3 ingest.py
-  ```
+2. Run the following command `python3 run_localGPT.py` to run the code.
 
-Run the following command to run the code.
-  
-  ```shell
-  python3 run_localGPT.py
-  ```
+3. Type in your questions at the prompt.
+
+## Running the UI
+
+1. Run the following command `python3 run_localGPT_API.py`. The API should being to run.
+
+2. Wait until everything has loaded in. You should see something like `INFO:werkzeug:Press CTRL+C to quit`.
+
+3. Open up a second terminal and activate the same python environment.
+
+4. Navigate to the `/localGPTUI` directory.
+
+5. Run the command `python3 localGPTUI.py`.
+
+6. Open up a web browser and go the address `http://localhost:5111/`.

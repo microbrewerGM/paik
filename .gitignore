@@ -1,16 +1,14 @@
 # Repo specific
 venv-paik/
 DB/
-DB/*
-DB/index/
-DB/index/*
 localGPT/
+localGPTUI/
 privateGPT/
 knowledge-gpt/
 dloads/
 dl_apify_storage.py
 README-localGPT.md
-SOURCE_DOCUMENTS/*
+SOURCE_DOCUMENTS/
 
 
 ### macOS ###

@@ -8,28 +8,40 @@ ML/AI LLM powered knowledgebase, private algorithms and computation for private/
 
 ## Active
 
-- [ ] Starting with localGPT
+- [ ] Provide option to reduce local workload of content is not private
+  - [ ] Option to use OpenAI ADA for embeddings
+  - [ ] Option to use OpenAI GPT-3.5/4 for chat logic processing
+  - [ ] Options for other free/inexpensive/available LLM APIs
+
+### langflow notes
+
+- Environment variable on MacOS `OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES` must be set to `YES` to run langflow
+
+## Next Feature
+
+- [ ] Investigate KnowldgeGRT
+  - Add YouTube video summarizer capability; not dependent on transcripts - voice to text to summaries
+  - Add capability to pull a file via URL
+
+## Future
+
+- Add writing style transfer capability
+
+## Done
+
+- [X] Create a roadmap
+- [X] Starting with localGPT
   - Inspired by several features of [**localGPT**](<https://github.com/PromtEngineer/localGPT>)
+- [X] Create update of knowledgebase for new source documents
+  - localGPT has this feature
+- [X] Investigate langflow
+  - Create options to run OpenAI for various ML/AI/chat functions
+  - Conclusion: Langflow is not a good fit for this project. Direct access to the source code of the modules is needed for the openness of the project.
 
 ### localGPT notes
 
 - [X] GPU processing is not available; this feature has not been carried over from localGPT. Possibly in the future.
 - [X] License: Apache 2.0 (from localGPT)
-
-## Next Feature
-
-- [ ] Integrate PrivateGPT
-  - Inspired by several features of [**PrivateGPT**](<https://github.com/imartinez/privateGPT>)
-
-## Future
-
-- Create update of knowledgebase for new source documents
-- Organize source docs folder
-- Maybe integrate [**langFlow**](<https://github.com/logspace-ai/langflow>)
-- Add writing style transfer capability
-- Create options to run OpenAI for various ML/AI/chat functions
-- Add capability to pull a file via URL
-- Add YouTube video summarizer capability; not dependent on transcripts - voice to text to summaries
 
 # Contributing
 

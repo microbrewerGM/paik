@@ -1,158 +1,183 @@
-import logging
+#!/usr/bin/env python3
 import os
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+import glob
+from typing import List
+from multiprocessing import Pool
+from tqdm import tqdm
 
-import click
-from langchain.docstore.document import Document
-from langchain.embeddings import HuggingFaceInstructEmbeddings
-from langchain.text_splitter import Language, RecursiveCharacterTextSplitter
+from langchain.document_loaders import (
+    CSVLoader,
+    EverNoteLoader,
+    PyMuPDFLoader,
+    TextLoader,
+    UnstructuredEmailLoader,
+    UnstructuredEPubLoader,
+    UnstructuredHTMLLoader,
+    UnstructuredMarkdownLoader,
+    UnstructuredODTLoader,
+    UnstructuredPowerPointLoader,
+    UnstructuredWordDocumentLoader,
+)
+
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.docstore.document import Document
+from chromadb.config import Settings
+# from constants import CHROMA_SETTINGS
+# from chromadb.config import Settings
 
-from constants import (
-    CHROMA_SETTINGS,
-    DOCUMENT_MAP,
-    EMBEDDING_MODEL_NAME,
-    INGEST_THREADS,
-    PERSIST_DIRECTORY,
-    SOURCE_DIRECTORY,
-)
+# Load environment variables
+PERSIST_DIRECTORY = os.environ.get('PERSIST_DIRECTORY')
+source_directory = os.environ.get('SOURCE_DIRECTORY', 'source_documents')
+embeddings_model_name = os.environ.get('EMBEDDINGS_MODEL_NAME')
+chunk_size = 500
+chunk_overlap = 50
+persist_directory=PERSIST_DIRECTORY
 
-
-def load_single_document(file_path: str) -> Document:
-    # Loads a single document from a file path
-    file_extension = os.path.splitext(file_path)[1]
-    loader_class = DOCUMENT_MAP.get(file_extension)
-    if loader_class:
-        loader = loader_class(file_path)
-    else:
-        raise ValueError("Document type is undefined")
-    return loader.load()[0]
-
-
-def load_document_batch(filepaths):
-    logging.info("Loading document batch")
-    # create a thread pool
-    with ThreadPoolExecutor(len(filepaths)) as exe:
-        # load files
-        futures = [exe.submit(load_single_document, name) for name in filepaths]
-        # collect data
-        data_list = [future.result() for future in futures]
-        # return data and file paths
-        return (data_list, filepaths)
-
-
-def load_documents(source_dir: str) -> list[Document]:
-    # Loads all documents from the source documents directory
-    all_files = os.listdir(source_dir)
-    paths = []
-    for file_path in all_files:
-        file_extension = os.path.splitext(file_path)[1]
-        source_file_path = os.path.join(source_dir, file_path)
-        if file_extension in DOCUMENT_MAP.keys():
-            paths.append(source_file_path)
-
-    # Have at least one worker and at most INGEST_THREADS workers
-    n_workers = min(INGEST_THREADS, max(len(paths), 1))
-    chunksize = round(len(paths) / n_workers)
-    docs = []
-    with ProcessPoolExecutor(n_workers) as executor:
-        futures = []
-        # split the load operations into chunks
-        for i in range(0, len(paths), chunksize):
-            # select a chunk of filenames
-            filepaths = paths[i : (i + chunksize)]
-            # submit the task
-            future = executor.submit(load_document_batch, filepaths)
-            futures.append(future)
-        # process all results
-        for future in as_completed(futures):
-            # open the file and load the data
-            contents, _ = future.result()
-            docs.extend(contents)
-
-    return docs
-
-
-def split_documents(documents: list[Document]) -> tuple[list[Document], list[Document]]:
-    # Splits documents for correct Text Splitter
-    text_docs, python_docs = [], []
-    for doc in documents:
-        file_extension = os.path.splitext(doc.metadata["source"])[1]
-        if file_extension == ".py":
-            python_docs.append(doc)
-        else:
-            text_docs.append(doc)
-
-    return text_docs, python_docs
-
-
-@click.command()
-@click.option(
-    "--device_type",
-    default="cpu",
-    type=click.Choice(
-        [
-            "cpu",
-            "cuda",
-            "ipu",
-            "xpu",
-            "mkldnn",
-            "opengl",
-            "opencl",
-            "ideep",
-            "hip",
-            "ve",
-            "fpga",
-            "ort",
-            "xla",
-            "lazy",
-            "vulkan",
-            "mps",
-            "meta",
-            "hpu",
-            "mtia",
-        ],
-    ),
-    help="Device to run on. (Default is cpu)",
-)
-def main(device_type):
-    # Load documents and split in chunks
-    logging.info(f"Loading documents from {SOURCE_DIRECTORY}")
-    documents = load_documents(SOURCE_DIRECTORY)
-    text_documents, python_documents = split_documents(documents)
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    python_splitter = RecursiveCharacterTextSplitter.from_language(
-        language=Language.PYTHON, chunk_size=1000, chunk_overlap=200
+try:
+    # Define the Chroma settings
+    CHROMA_SETTINGS = Settings(
+            chroma_db_impl='duckdb+parquet',
+            persist_directory=persist_directory,
+            anonymized_telemetry=False
     )
-    texts = text_splitter.split_documents(text_documents)
-    texts.extend(python_splitter.split_documents(python_documents))
-    logging.info(f"Loaded {len(documents)} documents from {SOURCE_DIRECTORY}")
-    logging.info(f"Split into {len(texts)} chunks of text")
+except:
+    print("Please set the environment variables in the .env file")
+    exit(0)
+
+# Custom document loaders
+class MyElmLoader(UnstructuredEmailLoader):
+    """Wrapper to fallback to text/plain when default does not work"""
+
+    def load(self) -> List[Document]:
+        """Wrapper adding fallback for elm without html"""
+        try:
+            try:
+                doc = UnstructuredEmailLoader.load(self)
+            except ValueError as e:
+                if 'text/html content not found in email' in str(e):
+                    # Try plain text
+                    self.unstructured_kwargs["content_source"]="text/plain"
+                    doc = UnstructuredEmailLoader.load(self)
+                else:
+                    raise
+        except Exception as e:
+            # Add file_path to exception message
+            raise type(e)(f"{self.file_path}: {e}") from e
+
+        return doc
+
+
+# Map file extensions to document loaders and their arguments
+LOADER_MAPPING = {
+    ".csv": (CSVLoader, {}),
+    # ".docx": (Docx2txtLoader, {}),
+    ".doc": (UnstructuredWordDocumentLoader, {}),
+    ".docx": (UnstructuredWordDocumentLoader, {}),
+    ".enex": (EverNoteLoader, {}),
+    ".eml": (MyElmLoader, {}),
+    ".epub": (UnstructuredEPubLoader, {}),
+    ".html": (UnstructuredHTMLLoader, {}),
+    ".md": (UnstructuredMarkdownLoader, {}),
+    ".odt": (UnstructuredODTLoader, {}),
+    ".pdf": (PyMuPDFLoader, {}),
+    ".ppt": (UnstructuredPowerPointLoader, {}),
+    ".pptx": (UnstructuredPowerPointLoader, {}),
+    ".txt": (TextLoader, {"encoding": "utf8"}),
+    # Add more mappings for other file extensions and loaders as needed
+}
+
+
+def load_single_document(file_path: str) -> List[Document]:
+    ext = "." + file_path.rsplit(".", 1)[-1]
+    if ext in LOADER_MAPPING:
+        loader_class, loader_args = LOADER_MAPPING[ext]
+        loader = loader_class(file_path, **loader_args)
+        return loader.load()
+
+    raise ValueError(f"Unsupported file extension '{ext}'")
+
+def load_documents(source_dir: str, ignored_files: List[str] = []) -> List[Document]:
+    """
+    Loads all documents from the source documents directory, ignoring specified files
+    """
+    all_files = []
+    for ext in LOADER_MAPPING:
+        all_files.extend(
+            glob.glob(os.path.join(source_dir, f"**/*{ext}"), recursive=True)
+        )
+    filtered_files = [file_path for file_path in all_files if file_path not in ignored_files]
+
+    with Pool(processes=os.cpu_count()) as pool:
+        results = []
+        with tqdm(total=len(filtered_files), desc='Loading new documents', ncols=80) as pbar:
+            for i, docs in enumerate(pool.imap_unordered(load_single_document, filtered_files)):
+                results.extend(docs)
+                pbar.update()
+
+    return results
+
+def process_documents(ignored_files: List[str] = []) -> List[Document]:
+    """
+    Load documents and split in chunks
+    """
+    print(f"Loading documents from {source_directory}")
+    documents = load_documents(source_directory, ignored_files)
+    if not documents:
+        print("No new documents to load")
+        exit(0)
+    print(f"Loaded {len(documents)} new documents from {source_directory}")
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    texts = text_splitter.split_documents(documents)
+    print(f"Split into {len(texts)} chunks of text (max. {chunk_size} tokens each)")
+    return texts
+
+def does_vectorstore_exist(persist_directory: str) -> bool:
+    """
+    Checks if vectorstore exists
+    """
+    if os.path.exists(os.path.join(persist_directory, 'index')):
+        if os.path.exists(os.path.join(persist_directory, 'chroma-collections.parquet')) and os.path.exists(os.path.join(persist_directory, 'chroma-embeddings.parquet')):
+            list_index_files = glob.glob(os.path.join(persist_directory, 'index/*.bin'))
+            list_index_files += glob.glob(os.path.join(persist_directory, 'index/*.pkl'))
+            # At least 3 documents are needed in a working vectorstore
+            if len(list_index_files) > 3:
+                return True
+    return False
+
+def create_embeddings(embeddings_model_name: str):
 
     # Create embeddings
-    embeddings = HuggingFaceInstructEmbeddings(
-        model_name=EMBEDDING_MODEL_NAME,
-        model_kwargs={"device": device_type},
-    )
-    # change the embedding type here if you are running into issues.
-    # These are much smaller embeddings and will work for most appications
-    # If you use HuggingFaceEmbeddings, make sure to also use the same in the
-    # run_localGPT.py file.
+    embeddings = HuggingFaceEmbeddings(model_name=embeddings_model_name)
 
-    # embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+    return embeddings
 
-    db = Chroma.from_documents(
-        texts,
-        embeddings,
-        persist_directory=PERSIST_DIRECTORY,
-        client_settings=CHROMA_SETTINGS,
-    )
+def main():
+
+    # Create embeddings
+    # embeddings = HuggingFaceEmbeddings(model_name=embeddings_model_name)
+    embeddings = create_embeddings(embeddings_model_name)
+
+    if does_vectorstore_exist(persist_directory):
+        # Update and store locally vectorstore
+        print(f"Appending to existing vectorstore at {persist_directory}")
+        db = Chroma(persist_directory=persist_directory, embedding_function=embeddings, client_settings=CHROMA_SETTINGS)
+        collection = db.get()
+        texts = process_documents([metadata['source'] for metadata in collection['metadatas']])
+        print(f"Creating embeddings. May take some minutes...")
+        db.add_documents(texts)
+    else:
+        # Create and store locally vectorstore
+        print("Creating new vectorstore")
+        texts = process_documents()
+        print(f"Creating embeddings. May take some minutes...")
+        db = Chroma.from_documents(texts, embeddings, persist_directory=persist_directory, client_settings=CHROMA_SETTINGS)
     db.persist()
     db = None
 
+    print(f"Ingestion complete! You can now run privateGPT.py to query your documents")
+
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(message)s", level=logging.INFO
-    )
     main()

@@ -1,15 +1,18 @@
 # Repo specific
 venv-paik/
-DB/
-localGPT/
-localGPTUI/
 privateGPT/
-knowledge-gpt/
-dloads/
-dl_apify_storage.py
-README-localGPT.md
-SOURCE_DOCUMENTS/
+source_documents/
+README-privateGPT.md
+backup_documents/
 
+
+# Models
+models/
+
+# Local Chroma db
+.chroma/
+db/
+DB/
 
 ### macOS ###
 # General

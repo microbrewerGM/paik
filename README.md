@@ -4,11 +4,17 @@
 
 ML/AI LLM powered knowledgebase, private algorithms and computation for private/public data.
 
+## Inspiration and Accreditations
+
+This project was inspired by the original [localGPT](https://github.com/PromtEngineer/localGPT). Which intern was inspired by the original [privateGPT](https://github.com/imartinez/privateGPT).
+
+Most of the description here is inspired by the original privateGPT.
+
 # Roadmap
 
 ## Active
 
-- [ ] Provide option to reduce local workload of content is not private
+- [ ] Provide options to change embeddings and LLM model; provide the option to reduce the local workload of content that is not private/sensitive
   - [ ] Option to use OpenAI ADA for embeddings
   - [ ] Option to use OpenAI GPT-3.5/4 for chat logic processing
   - [ ] Options for other free/inexpensive/available LLM APIs
@@ -19,12 +25,13 @@ ML/AI LLM powered knowledgebase, private algorithms and computation for private/
 
 ## Next Feature
 
-- [ ] Investigate KnowldgeGRT
-  - Add YouTube video summarizer capability; not dependent on transcripts - voice to text to summaries
-  - Add capability to pull a file via URL
+- [ ] TBD....
 
 ## Future
 
+- [ ] Investigate KnowldgeGRT
+  - Add YouTube video summarizer capability; not dependent on transcripts - voice to text to summaries
+  - Add capability to pull a file via URL
 - Add writing style transfer capability
 
 ## Done
@@ -36,7 +43,7 @@ ML/AI LLM powered knowledgebase, private algorithms and computation for private/
   - localGPT has this feature
 - [X] Investigate langflow
   - Create options to run OpenAI for various ML/AI/chat functions
-  - Conclusion: Langflow is not a good fit for this project. Direct access to the source code of the modules is needed for the openness of the project.
+  - Conclusion: Langflow is not a good fit for this project. Direct access to the source code of the modules is needed for the openness of the project - working in Python, not JS/TS. Fantastic GUIs - I wish we had a Python version of the langflow GUI. 
 
 ### localGPT notes
 
@@ -62,7 +69,7 @@ ML/AI LLM powered knowledgebase, private algorithms and computation for private/
     : to strike hard and repeatedly : pummel
   ```
 
-and... sometimes i feel like pummeling my head against the keyboard... the fun part is when the code pummels the work ```;)```
+the fun part is when the code pummels the work ```;)```
 
 # Environment Setup
 
@@ -86,9 +93,9 @@ Setting up the execution environment to run the code, start with installing all 
 
 ## Running the UI
 
-1. Run the following command `python3 run_localGPT_API.py`. The API should being to run.
+1. Run the following command `python3 run_localGPT_API.py`. The API should begin to run.
 
-2. Wait until everything has loaded in. You should see something like `INFO:werkzeug:Press CTRL+C to quit`.
+2. Wait until everything has loaded in - this part can/will take a lot of time depending on the document sizes and processing power (several minutes or more). You should see something like `INFO:werkzeug:Press CTRL+C to quit`.
 
 3. Open up a second terminal and activate the same python environment.
 

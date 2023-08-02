@@ -2,21 +2,20 @@ import logging
 import os
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
-import click
 from langchain.docstore.document import Document
-from langchain.embeddings import HuggingFaceInstructEmbeddings
 from langchain.text_splitter import Language, RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
 
 from constants import (
+    PROCESSOR_TYPE,
+    PROCESSOR_MAP,
     CHROMA_SETTINGS,
     DOCUMENT_MAP,
     EMBEDDING_MODEL_NAME,
     INGEST_THREADS,
     PERSIST_DIRECTORY,
-    SOURCE_DIRECTORY,
+    SOURCE_DIRECTORY
 )
-
+from utils import create_embeddings, create_and_store_db
 
 def load_single_document(file_path: str) -> Document:
     # Loads a single document from a file path
@@ -85,37 +84,8 @@ def split_documents(documents: list[Document]) -> tuple[list[Document], list[Doc
 
     return text_docs, python_docs
 
-
-@click.command()
-@click.option(
-    "--device_type",
-    default="cpu",
-    type=click.Choice(
-        [
-            "cpu",
-            "cuda",
-            "ipu",
-            "xpu",
-            "mkldnn",
-            "opengl",
-            "opencl",
-            "ideep",
-            "hip",
-            "ve",
-            "fpga",
-            "ort",
-            "xla",
-            "lazy",
-            "vulkan",
-            "mps",
-            "meta",
-            "hpu",
-            "mtia",
-        ],
-    ),
-    help="Device to run on. (Default is cpu)",
-)
 def main(device_type):
+
     # Load documents and split in chunks
     logging.info(f"Loading documents from {SOURCE_DIRECTORY}")
     documents = load_documents(SOURCE_DIRECTORY)
@@ -130,29 +100,15 @@ def main(device_type):
     logging.info(f"Split into {len(texts)} chunks of text")
 
     # Create embeddings
-    embeddings = HuggingFaceInstructEmbeddings(
-        model_name=EMBEDDING_MODEL_NAME,
-        model_kwargs={"device": device_type},
-    )
-    # change the embedding type here if you are running into issues.
-    # These are much smaller embeddings and will work for most appications
-    # If you use HuggingFaceEmbeddings, make sure to also use the same in the
-    # run_localGPT.py file.
+    embeddings = create_embeddings(EMBEDDING_MODEL_NAME, device_type)
 
-    # embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
-
-    db = Chroma.from_documents(
-        texts,
-        embeddings,
-        persist_directory=PERSIST_DIRECTORY,
-        client_settings=CHROMA_SETTINGS,
-    )
-    db.persist()
-    db = None
+    # Create vector database
+    create_and_store_db(texts, embeddings, PERSIST_DIRECTORY, CHROMA_SETTINGS)
 
 
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(message)s", level=logging.INFO
     )
-    main()
+    main(device_type = PROCESSOR_MAP.get(PROCESSOR_TYPE))
+

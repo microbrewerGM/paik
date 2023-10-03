@@ -15,7 +15,7 @@ auto-gptq
 docx2txt
 
 # Utilities
-urllib3==1.26.6
+urllib3==1.26.17
 accelerate
 bitsandbytes
 click
